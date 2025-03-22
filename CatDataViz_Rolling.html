@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAT Data Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.24.2/plotly.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .series-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .series-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        input[type="file"], select, button {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px 15px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        #chart {
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CAT Data Visualization</h1>
+        
+        <div class="card">
+            <h2>Upload Data</h2>
+            <input type="file" id="csvFileInput" accept=".csv" />
+            <p>Or use <button id="loadCurrentData">Current Data</button></p>
+        </div>
+        
+        <div class="card controls">
+            <div class="control-group">
+                <label for="tradeTypeSelect">Trade Type:</label>
+                <select id="tradeTypeSelect">
+                    <option value="All">All</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="errorTypeRadio">Error Rate Type:</label>
+                <div>
+                    <input type="radio" id="initialRadio" name="errorType" value="Initial" checked>
+                    <label for="initialRadio">Initial</label>
+                    <input type="radio" id="adjustedRadio" name="errorType" value="Adjusted">
+                    <label for="adjustedRadio">Adjusted</label>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Date Range:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="date" id="startDate">
+                    <input type="date" id="endDate">
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>Select Data Series to Display</h3>
+            <div class="series-list" id="seriesList">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+        
+        <div class="card">
+            <div id="chart"></div>
+        </div>
+        
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Data Table</h3>
+                <div>
+                    <button id="toggleTableBtn">Show/Hide Table</button>
+                    <button id="downloadCsvBtn">Download CSV</button>
+                    <button id="downloadPngBtn">Download Chart</button>
+                </div>
+            </div>
+            <div id="tableContainer" style="display: none; margin-top: 15px;" class="table-container">
+                <!-- Table will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let rawData = [];
+        let filteredData = [];
+        let availableSeries = [
+            {id: 'Late', label: 'Late', color: '#1f77b4'},
+            {id: 'Rejection', label: 'Rejection', color: '#ff7f0e'},
+            {id: 'Intrafirm', label: 'Intrafirm', color: '#2ca02c'},
+            {id: 'Interfirm Sent', label: 'Interfirm Sent', color: '#d62728'},
+            {id: 'Interfirm Received', label: 'Interfirm Received', color: '#9467bd'},
+            {id: 'Exchange', label: 'Exchange', color: '#8c564b'},
+            {id: 'Trade', label: 'Trade', color: '#e377c2'},
+            {id: 'Overall Error Rate', label: 'Overall Error Rate', color: '#7f7f7f'}
+        ];
+        let selectedSeries = ['Overall Error Rate', 'Late', 'Rejection'];
+        
+        // DOM elements
+        const csvFileInput = document.getElementById('csvFileInput');
+        const loadCurrentDataBtn = document.getElementById('loadCurrentData');
+        const tradeTypeSelect = document.getElementById('tradeTypeSelect');
+        const seriesList = document.getElementById('seriesList');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const toggleTableBtn = document.getElementById('toggleTableBtn');
+        const tableContainer = document.getElementById('tableContainer');
+        const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+        const downloadPngBtn = document.getElementById('downloadPngBtn');
+        
+        // Initialize the page
+        function initPage() {
+            // Create series checkboxes
+            createSeriesCheckboxes();
+            
+            // Event listeners
+            csvFileInput.addEventListener('change', handleFileUpload);
+            loadCurrentDataBtn.addEventListener('click', loadCurrentData);
+            tradeTypeSelect.addEventListener('change', updateVisualization);
+            startDateInput.addEventListener('change', updateVisualization);
+            endDateInput.addEventListener('change', updateVisualization);
+            toggleTableBtn.addEventListener('click', toggleTable);
+            downloadCsvBtn.addEventListener('click', downloadCSV);
+            downloadPngBtn.addEventListener('click', downloadChart);
+            
+            document.querySelectorAll('input[name="errorType"]').forEach(radio => {
+                radio.addEventListener('change', updateVisualization);
+            });
+        }
+        
+        // Create checkboxes for the data series
+        function createSeriesCheckboxes() {
+            seriesList.innerHTML = '';
+            
+            availableSeries.forEach(series => {
+                const isChecked = selectedSeries.includes(series.id);
+                
+                const seriesItem = document.createElement('div');
+                seriesItem.className = 'series-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `series-${series.id.replace(/\s+/g, '-')}`;
+                checkbox.value = series.id;
+                checkbox.checked = isChecked;
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        selectedSeries.push(series.id);
+                    } else {
+                        selectedSeries = selectedSeries.filter(id => id !== series.id);
+                    }
+                    updateVisualization();
+                });
+                
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = series.label;
+                
+                const colorSwatch = document.createElement('span');
+                colorSwatch.style.display = 'inline-block';
+                colorSwatch.style.width = '12px';
+                colorSwatch.style.height = '12px';
+                colorSwatch.style.backgroundColor = series.color;
+                colorSwatch.style.marginLeft = '5px';
+                
+                seriesItem.appendChild(checkbox);
+                seriesItem.appendChild(label);
+                seriesItem.appendChild(colorSwatch);
+                seriesList.appendChild(seriesItem);
+            });
+        }
+        
+        // Handle file upload
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                Papa.parse(file, {
+                    header: true,
+                    dynamicTyping: true,
+                    complete: function(results) {
+                        processData(results.data);
+                    }
+                });
+            }
+        }
+        
+// Load current data from CAT_Rolling.csv
+function loadCurrentData() {
+    // Try multiple possible paths
+    const possiblePaths = [
+        'CAT_Rolling.csv',
+        './CAT_Rolling.csv',
+        '../data/CAT_Rolling.csv', // If it's in a data folder
+        'data/CAT_Rolling.csv'
+    ];
+    
+    // Try each path
+    tryLoadingFromPaths(possiblePaths, 0);
+}
+
+function tryLoadingFromPaths(paths, index) {
+    if (index >= paths.length) {
+        alert('Could not load the CSV file. Please verify that CAT_Rolling.csv exists and is accessible.');
+        return;
+    }
+    
+    fetch(paths[index])
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to load file (status ${response.status})`);
+            }
+            return response.text();
+        })
+        .then(csvText => {
+            const results = Papa.parse(csvText, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true
+            });
+            
+            if (results.data && results.data.length > 0) {
+                processData(results.data);
+                console.log(`Successfully loaded from: ${paths[index]}`);
+            } else {
+                throw new Error('CSV file is empty or could not be parsed correctly');
+            }
+        })
+        .catch(error => {
+            console.error(`Error loading from ${paths[index]}:`, error);
+            // Try the next path
+            tryLoadingFromPaths(paths, index + 1);
+        });
+}
+        
+        // Process the data
+        function processData(data) {
+            rawData = data.filter(row => row.Date); // Remove rows without dates
+            
+            // Convert dates to proper format
+            rawData.forEach(row => {
+                if (typeof row.Date === 'string') {
+                    row.Date = new Date(row.Date);
+                }
+            });
+            
+            // Populate trade type dropdown
+            populateTradeTypes();
+            
+            // Set date range
+            const dates = rawData.map(row => new Date(row.Date));
+            const minDate = new Date(Math.min.apply(null, dates));
+            const maxDate = new Date(Math.max.apply(null, dates));
+            
+            startDateInput.value = minDate.toISOString().split('T')[0];
+            endDateInput.value = maxDate.toISOString().split('T')[0];
+            
+            // Update the visualization
+            updateVisualization();
+        }
+        
+        // Populate trade type dropdown
+        function populateTradeTypes() {
+            const tradeTypes = ['All', ...new Set(rawData.map(row => row['Trade Type']).filter(Boolean))];
+            
+            tradeTypeSelect.innerHTML = '';
+            tradeTypes.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                tradeTypeSelect.appendChild(option);
+            });
+        }
+        
+        // Update the visualization based on current filters
+        function updateVisualization() {
+            if (!rawData.length) return;
+            
+            // Get filter values
+            const tradeType = tradeTypeSelect.value;
+            const errorType = document.querySelector('input[name="errorType"]:checked').value;
+            const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+            const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+            
+            // Filter data
+            filteredData = rawData.filter(row => {
+                // Filter by trade type
+                if (tradeType !== 'All' && row['Trade Type'] !== tradeType) return false;
+                
+                // Filter by date range
+                const rowDate = new Date(row.Date);
+                if (startDate && rowDate < startDate) return false;
+                if (endDate && rowDate > endDate) return false;
+                
+                return true;
+            });
+            
+            // Sort by date
+            filteredData.sort((a, b) => new Date(a.Date) - new Date(b.Date));
+            
+            // Update chart
+            updateChart(errorType);
+            
+            // Update table if visible
+            if (tableContainer.style.display !== 'none') {
+                updateTable(errorType);
+            }
+        }
+        
+        // Update the chart with dynamic y-axis range
+        function updateChart(errorType) {
+            const traces = [];
+            
+            // Create a trace for each selected series
+            selectedSeries.forEach(seriesId => {
+                const series = availableSeries.find(s => s.id === seriesId);
+                const columnName = seriesId === 'Late' ? 'Late' : `${seriesId} ${errorType}`;
+                
+                const trace = {
+                    x: filteredData.map(row => new Date(row.Date)),
+                    y: filteredData.map(row => row[columnName]),
+                    mode: 'lines+markers',
+                    name: seriesId === 'Late' ? 'Late' : `${seriesId} ${errorType}`,
+                    line: {
+                        color: series.color
+                    }
+                };
+                
+                traces.push(trace);
+            });
+            
+            // Calculate y-axis range dynamically based on selected data
+            let min = Infinity;
+            let max = -Infinity;
+            
+            for (const trace of traces) {
+                // Filter out undefined/null values
+                const validValues = trace.y.filter(y => y !== undefined && y !== null);
+                if (validValues.length > 0) {
+                    const traceMin = Math.min(...validValues);
+                    const traceMax = Math.max(...validValues);
+                    min = Math.min(min, traceMin);
+                    max = Math.max(max, traceMax);
+                }
+            }
+            
+            // Add some padding (5% of range) to the y-axis range
+            const range = max - min;
+            const padding = range * 0.05;
+            min = Math.max(0, min - padding); // Don't go below 0 for error rates
+            max = max + padding;
+            
+            const layout = {
+                title: 'CAT Error Rates Over Time',
+                xaxis: {
+                    title: 'Date',
+                    rangeslider: {visible: true},
+                    rangeselector: {
+                        buttons: [
+                            {
+                                count: 7,
+                                label: '1w',
+                                step: 'day',
+                                stepmode: 'backward'
+                            },
+                            {
+                                count: 1,
+                                label: '1m',
+                                step: 'month',
+                                stepmode: 'backward'
+                            },
+                            {
+                                count: 3,
+                                label: '3m',
+                                step: 'month',
+                                stepmode: 'backward'
+                            },
+                            {
+                                count: 6,
+                                label: '6m',
+                                step: 'month',
+                                stepmode: 'backward'
+                            },
+                            {
+                                count: 1,
+                                label: 'YTD',
+                                step: 'year',
+                                stepmode: 'todate'
+                            },
+                            {
+                                count: 1,
+                                label: '1y',
+                                step: 'year',
+                                stepmode: 'backward'
+                            },
+                            {step: 'all'}
+                        ]
+                    }
+                },
+                yaxis: {
+                    title: 'Error Rate',
+                    tickformat: '.4f',
+                    range: [min, max] // Set dynamic range
+                },
+                hovermode: 'closest',
+                showlegend: true,
+                legend: {
+                    orientation: 'h',
+                    y: -0.2
+                }
+            };
+            
+            Plotly.newPlot('chart', traces, layout, {responsive: true});
+        }
+        
+        // Update the data table
+        function updateTable(errorType) {
+            const columns = ['Date'];
+            selectedSeries.forEach(seriesId => {
+                const columnName = seriesId === 'Late' ? 'Late' : `${seriesId} ${errorType}`;
+                columns.push(columnName);
+            });
+            
+            let tableHTML = '<table><thead><tr>';
+            columns.forEach(col => {
+                tableHTML += `<th>${col}</th>`;
+            });
+            tableHTML += '</tr></thead><tbody>';
+            
+            filteredData.forEach(row => {
+                tableHTML += '<tr>';
+                columns.forEach(col => {
+                    const value = col === 'Date' 
+                        ? moment(row[col]).format('YYYY-MM-DD') 
+                        : row[col] !== undefined && row[col] !== null ? row[col].toFixed(6) : 'N/A';
+                    tableHTML += `<td>${value}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+            
+            tableHTML += '</tbody></table>';
+            tableContainer.innerHTML = tableHTML;
+        }
+        
+        // Toggle the data table
+        function toggleTable() {
+            if (tableContainer.style.display === 'none') {
+                tableContainer.style.display = 'block';
+                const errorType = document.querySelector('input[name="errorType"]:checked').value;
+                updateTable(errorType);
+            } else {
+                tableContainer.style.display = 'none';
+            }
+        }
+        
+        // Download the filtered data as CSV
+        function downloadCSV() {
+            if (!filteredData.length) return;
+            
+            const errorType = document.querySelector('input[name="errorType"]:checked').value;
+            const columns = ['Date'];
+            selectedSeries.forEach(seriesId => {
+                const columnName = seriesId === 'Late' ? 'Late' : `${seriesId} ${errorType}`;
+                columns.push(columnName);
+            });
+            
+            let csvContent = columns.join(',') + '\n';
+            
+            filteredData.forEach(row => {
+                const values = columns.map(col => {
+                    return col === 'Date' 
+                        ? moment(row[col]).format('YYYY-MM-DD')
+                        : row[col];
+                });
+                csvContent += values.join(',') + '\n';
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'cat_data_export.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Download the chart as PNG
+        function downloadChart() {
+            Plotly.downloadImage('chart', {
+                format: 'png',
+                filename: 'cat_error_rates_chart',
+                height: 600,
+                width: 1000
+            });
+        }
+        
+        // Initialize the page when loaded
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

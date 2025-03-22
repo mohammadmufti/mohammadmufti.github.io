@@ -1,0 +1,598 @@
+/* Header */
+header {
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%; /* Ensures it fits within the viewport */
+}
+.game-title {
+    font-family: 'Amiri', serif;
+    font-size: 2.8rem;
+    color: #fff;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4);
+    background: linear-gradient(135deg, #2601cc8c 0%, #5a67d7d4 100%);
+    padding: 1.5rem 3rem;
+    border-radius: 15px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+.game-title:hover {
+    transform: translateY(-5px);
+}
+
+body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+    overflow-x: hidden;
+    width: 100%; /* Fix width to viewport */
+    /*max-width: 100vw; /* Prevent exceeding viewport width */
+    margin: 0; /* Ensure no extra margins */
+    padding: 0; /* Ensure no extra padding */
+    overflow-x: hidden; /* Prevents horizontal scrolling */
+    box-sizing: border-box;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+#loadingMessage {
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Modals */
+.modal-content {
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(145deg, #ffffff, #f0f4f8);
+    border: none;
+}
+.modal-header {
+    background: #6b48ff;
+    color: #fff;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+}
+.modal-body {
+    padding: 2rem;
+}
+
+/* Buttons */
+.btn-primary {
+    background: linear-gradient(135deg, #6b48ff, #8e66ff);
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(107, 72, 255, 0.4);
+    transition: all 0.3s ease;
+}
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(107, 72, 255, 0.6);
+    background: linear-gradient(135deg, #8e66ff, #6b48ff);
+}
+.btn-success { /* Let's Play! */
+    background: linear-gradient(135deg, #28a745, #34c759);
+    border: none;
+    padding: 0.5rem 1.5rem; /* Increased from 0.2rem 1rem */
+    font-size: 1.3rem; /* Increased from 1.1rem */
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    transition: all 0.3s ease;
+    margin-left: auto;
+    margin-right: auto;
+}
+#startButton {
+    margin-top: 1.5rem; /* Space above the button */
+    display: block; /* Ensure it’s a block element */
+    margin-left: auto;
+    margin-right: auto;
+}
+.btn-success:hover {
+    transform: scale(1.01);
+    box-shadow: 0 6px 18px rgba(40, 167, 69, 0.6);
+    background: linear-gradient(135deg, #34c759, #28a745);
+}
+.btn-danger { /* I'm Done */
+    background: linear-gradient(135deg, #dc3545, #ff5767);
+    border: none;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+    transition: all 0.3s ease;
+}
+.btn-danger:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(220, 53, 69, 0.6);
+    background: linear-gradient(135deg, #ff5767, #dc3545);
+}
+#doneButton {
+    visibility: hidden;
+}
+
+/* Game Area */
+#gameArea {
+    font-size: 1.5rem;
+    font-family: 'Noto Sans Arabic', sans-serif;
+    background: #fff;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease;
+    max-width: 800px; /* Limit stretching on large screens */
+    margin-left: auto;
+    margin-right: auto;
+    display: none;
+    /* max-width: 100%; Ensures it fits within the viewport */
+    overflow-x: hidden; /* Prevent horizontal overflow */
+}
+#gameArea:hover {
+    transform: translateY(-2px);
+}
+.question-container {
+    direction: ltr;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: nowrap; /* Prevent wrapping */
+}
+.question-container span[dir="rtl"] {
+    font-weight: 600;
+}
+/* Game Area section */
+.correct-answer {
+    background: linear-gradient(135deg, #28a745, #34c759);
+    color: #fff !important; /* Force white text */
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+    border-color: #28a745;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.6);
+}
+
+/* Replace any prior incorrect-answer changes with this */
+.incorrect-answer {
+    background: linear-gradient(135deg, #dc3545, #ff5767) !important; /* Force red gradient */
+    color: #fff !important; /* Force white text */
+    border-color: #dc3545 !important;
+    animation: jiggle 0.5s ease infinite;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.6);
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0); /* Remove tap highlight */
+}
+/* Jiggle animation */
+@keyframes jiggle {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}
+.spacer {
+    width: 10px;
+    display: inline-block;
+}
+.speak-btn {
+    background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+    transition: all 0.3s ease;
+    color: #fff;
+    font-size: 1.2rem;
+    padding: 0;
+}
+.speak-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 18px rgba(255, 107, 107, 0.6);
+    background: linear-gradient(135deg, #ff8e8e, #ff6b6b);
+}
+#gameArea .btn-outline-primary {
+    border-color: #6b48ff;
+    color: #6b48ff;
+    padding: 0.5rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(107, 72, 255, 0.2);
+    transition: all 0.3s ease;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0); /* Remove tap highlight */
+}
+#gameArea .btn-outline-primary:hover {
+    background: #6b48ff;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(107, 72, 255, 0.4);
+}
+
+/* Bug fixing mobile no hover */
+#gameArea.mobile-device .btn-outline-primary {
+    -webkit-tap-highlight-color: transparent; /* Remove iOS tap highlight */
+    -webkit-appearance: none; /* Prevent default button styling */
+    background: none !important; /* Reset background to avoid persistence */
+    transition: none; /* Disable transitions to prevent lag */
+}
+#gameArea.mobile-device .btn-outline-primary:hover {
+    background: none; /* No hover effect on touch devices */
+    color: #6b48ff; /* Default color */
+    transform: none; /* No lift */
+    box-shadow: 0 2px 8px rgba(107, 72, 255, 0.2); /* Default shadow */
+}
+/* Post selection issue*/
+#gameArea.reset button {
+    -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
+    background: none !important;
+    color: #6b48ff !important;
+    border-color: #6b48ff !important;
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(107, 72, 255, 0.2) !important;
+    animation: none !important;
+    transition: none !important;
+}
+
+.disabled-answer {
+    cursor: not-allowed;
+    opacity: 0.7; /* Slight fade to indicate disabled */
+}
+/* Ensure disabled overrides hover */
+#gameArea .btn-outline-primary:disabled:hover {
+    transform: none; /* No hover lift */
+    box-shadow: 0 2px 8px rgba(107, 72, 255, 0.2); /* Keep base shadow */
+    background: none; /* No hover background */
+}
+
+/* Slider Container */
+#sliderContainer {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    max-width: 800px; /* Keep from previous suggestion */
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center children horizontally */
+    text-align: center; /* Center text */
+    overflow-x: hidden; /* Prevent horizontal overflow */
+}
+#sliderContainer label {
+    display: block;
+    margin-bottom: 1rem;
+    font-family: 'Poppins', sans-serif;
+    color: #44328f; /* Base purple */
+    font-weight: 600;
+    text-shadow: 1px 1px 3px rgba(107, 72, 255, 0.3); /* Subtle glow */
+    transition: color 0.3s ease;
+}
+#sliderContainer label .level-number {
+    color: #8e66ff; /* Lighter purple for the number */
+    font-size: 1.2rem; /* Slightly larger */
+    font-weight: 700;
+    background: linear-gradient(135deg, #6b48ff, #9bbdff); /* Gradient background */
+    -webkit-background-clip: text;
+    background-clip: text;
+    text-shadow: 2px 2px 4px rgba(107, 72, 255, 0.5); /* Stronger glow */
+    animation: pulse 1.5s infinite; /* Subtle pulse effect */
+}
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+.form-range {
+    width: 80%;
+    margin: 1rem auto;
+}
+.form-range::-webkit-slider-runnable-track {
+    background: linear-gradient(to left, #6b48ff, #9bbdff); 
+    height: 8px;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.form-range::-moz-range-track {
+    background: linear-gradient(to left, #6b48ff, #9bbdff); 
+    height: 8px;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.form-range::-webkit-slider-thumb {
+    background: #6b48ff;
+    box-shadow: 0 2px 6px rgba(107, 72, 255, 0.5);
+}
+.form-range::-moz-range-thumb {
+    background: #6b48ff;
+    box-shadow: 0 2px 6px rgba(107, 72, 255, 0.5);
+}
+#levelDescription {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #6b48ff; /* Match the purple theme */
+    margin: 0.5rem 0; /* Space above and below */
+    text-align: center;
+}
+
+/* Score Display */
+#scoreDisplay {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    background: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(203, 202, 202, 0.936);
+    transition: all 0.3s ease;
+    visibility: hidden;
+}
+#scoreDisplay #correctScore {
+    color: #28a745; /* Green for correct */
+    font-weight: 600;
+}
+
+#scoreDisplay #incorrectScore {
+    color: #dc3545; /* Red for incorrect */
+    font-weight: 600;
+}
+#scoreDisplay:hover {
+    transform: scale(1.05); /* Slight zoom */
+    text-shadow: 0 4px 12px rgba(203, 202, 202, 0.936);
+}
+
+@media (max-width: 576px) {
+    #scoreDisplay {
+        display: flex;
+        flex-direction: column; /* Stack vertically */
+        align-items: center; /* Center text */
+        padding: 0.5rem; /* Slightly tighter padding */
+        font-size: 0.9rem; /* Slightly smaller text for fit */
+        white-space: nowrap; /* Prevent text wrapping */
+        margin-bottom: 1rem; /* Add gap below scoreboard */
+    }
+
+    #scoreDisplay span {
+        margin: 0.2rem 0; /* Space between Correct and Incorrect */
+    }
+}
+
+/* Summary */
+#correctAnswers, #incorrectAnswers {
+    font-family: 'Noto Sans Arabic', sans-serif;
+    font-size: 1.1rem;
+    color: #333;
+    line-height: 1.6;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+#correctAnswers {
+    color: #28a745;
+}
+#incorrectAnswers {
+    color: #dc3545;
+}
+
+footer {
+    text-align: center;
+    font-size: 0.8em;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-top: 1px solid #ddd;
+    position: relative; /* Ensure it stays in flow */
+    clear: both; /* Clear any floating elements above */
+}
+
+/* Style for hyperlinks in the footer */
+footer a {
+    color: #007BFF; /* Blue color for links */
+    text-decoration: none; /* Remove underline */
+}
+
+footer a:hover {
+    text-decoration: underline; /* Underline on hover */
+}
+
+/* Info button styling */
+#infoButton {
+    margin-top: 5px;
+    font-size: 0.9rem;
+    padding: 0.5rem 1.5rem; /* More padding for a substantial feel */
+    border-radius: 12px; /* Softer corners, matching other buttons */
+    background: linear-gradient(135deg, #6b48ff, #8e66ff); /* Purple gradient from theme */
+    border: none;
+    color: #fff; /* White text for contrast */
+    font-family: 'Poppins', sans-serif; /* Match body text */
+    font-weight: 600; /* Bold for emphasis */
+    box-shadow: 0 4px 12px rgba(107, 72, 255, 0.4); /* Subtle shadow */
+    transition: all 0.3s ease; /* Smooth transitions */
+    text-transform: uppercase; /* Uppercase for a sleek look */
+    letter-spacing: 0.5px; /* Slight spacing for readability */
+    display: inline-block; /* Ensure proper spacing */
+    cursor: pointer; /* Indicate interactivity */
+}
+
+#infoButton:hover {
+    transform: translateY(-3px); /* Lift effect, matching other buttons */
+    box-shadow: 0 6px 18px rgba(107, 72, 255, 0.6); /* Stronger shadow on hover */
+    background: linear-gradient(135deg, #8e66ff, #6b48ff); /* Reverse gradient on hover */
+}
+
+#infoButton:active {
+    transform: translateY(-1px); /* Slight press effect */
+    box-shadow: 0 2px 6px rgba(107, 72, 255, 0.4); /* Reduced shadow on click */
+}
+
+/* Responsive adjustments for level, score, and done button */
+.d-flex.justify-content-between.align-items-center {
+    max-width: 800px; /* Match game area width */
+    margin-left: auto;
+    margin-right: auto;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+    gap: 1rem; /* Add spacing between items */
+    padding: 0 1rem; /* Prevent edge spillover */
+}
+#levelDisplay {
+    position: relative; /* Add this to contain the ::before pseudo-element */
+    font-family: 'Amiri', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6b48ff, #8e66ff); /* Keep gradient */
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 2px 2px 4px rgba(107, 72, 255, 0.3); /* Keep subtle glow */
+    padding: 0.3rem 1.2rem; /* Slightly more padding for border */
+    border-radius: 10px; /* Softer corners */
+    border: 2px solid #6b48ff; /* Bold border matching gradient */
+    box-shadow: 0 4px 12px rgba(107, 72, 255, 0.4), /* Outer shadow for depth */
+                inset 0 2px 4px rgba(255, 255, 255, 0.3), /* Inner highlight */
+                inset 0 -2px 4px rgba(0, 0, 0, 0.2); /* Inner shadow for 3D */
+    display: inline-block;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, text-shadow 0.3s ease;
+    flex: 0 1 auto;
+    text-align: left;
+}
+#levelDisplay:hover {
+    transform: scale(1.05); /* Slight zoom */
+    text-shadow: 3px 3px 6px rgba(107, 72, 255, 0.5); /* Stronger glow */
+}
+#levelDisplay::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    /*
+    background: radial-gradient(circle, rgba(107, 72, 255, 0.2) 0%, rgba(107, 72, 255, 0) 70%);
+    */
+    transform: translate(-50%, -50%);
+    z-index: -1; /* Behind the text */
+    border-radius: 10px;
+    pointer-events: none; /* Ensure it doesn't interfere with clicks */
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    /*ADDED*/
+    .container {
+        width: 100%;
+        padding-left: 10px;
+        padding-right: 10px;
+        overflow-x: hidden;
+    }
+
+    header {
+        max-width: 100%; /* Full width on mobile */
+        padding: 0 1rem; /* Reduce side padding */
+    }
+
+    .game-title {
+        font-size: 1.8rem; /* Smaller title */
+        padding: 1rem 1.5rem; /* Reduced padding */
+        border-radius: 10px; /* Softer corners */
+    }
+
+    .game-title:hover {
+        transform: translateY(-3px); /* Keep hover effect but adjust */
+    }
+    #gameArea {
+        padding: 1rem; /* Reduce padding on small screens */
+        font-size: 1.2rem; /* Slightly smaller text */
+        overflow: hidden; /* Contain any overflowing content */
+        margin-bottom: 2rem; /* Ensure consistent spacing below */
+    }
+
+    #gameArea .card {
+        transition: all 0.1s ease; /* Quick transition for reset */
+    }
+    
+    #gameArea .card:hover,
+    #gameArea .correct-answer,
+    #gameArea .incorrect-answer {
+        transition: all 0.3s ease; /* Restore normal transition */
+    }
+
+    /*ADDED*/
+    #gameArea, #sliderContainer, header {
+        width: 100%;
+        max-width: 100%;
+        padding-left: 10px;
+        padding-right: 10px;
+        box-sizing: border-box;
+    }
+    /* Make buttons more mobile-friendly */
+    #gameArea .btn-outline-primary {
+        padding: 0.5rem 1rem;
+        margin: 0.5rem 0.25rem;
+        min-width: 140px;
+        max-width: calc(100% - 20px);
+        display: inline-block;
+    }
+    
+    #gameArea.reset .card,
+    #gameArea.reset .btn-outline-primary {
+        transform: none !important; /* Reset transform */
+        background: none !important; /* Reset background */
+        animation: none !important; /* Stop animations (e.g., jiggle) */
+        box-shadow: none !important; /* Reset shadow */
+        color: #333 !important; /* Reset text color */
+        border-color: #6b48ff !important; /* Reset border to default */
+    }
+
+    .d-flex.justify-content-between.align-items-center {
+        flex-direction: row; /* Keep items horizontal by default */
+        justify-content: space-between; /* Restore horizontal spacing */
+        align-items: center; /* Align tops and bottoms */
+        flex-wrap: nowrap; /* Prevent wrapping unless necessary */
+        padding: 0 0.5rem; /* Reduce padding for tighter fit */
+    }
+
+    #levelDisplay {
+        font-size: 1.5rem; /* Slightly smaller on mobile */
+        padding: 0.1rem 0.8rem; /* Tighter padding */
+    }
+
+    #doneButton {
+        margin-top: 0; /* Reset any vertical offset */
+        margin-left: 0; /* Small spacing from score */
+    }
+
+    .question-container {
+        /*ADDED*/
+        width: 100%;
+        flex-wrap: wrap;
+
+        flex-direction: row; /* Explicitly horizontal */
+        justify-content: center; /* Keep centered */
+        gap: 0.5rem; /* Smaller gap for tight screens */
+    }
+
+    .speak-btn {
+        width: 30px; /* Slightly smaller for mobile */
+        height: 30px;
+        font-size: 0.9rem; /* Adjust icon size */
+        margin-left: 0.5rem; /* Space from text */
+    }
+    #sliderContainer {
+        padding: 1rem; /* Reduce padding on mobile */
+    }
+    #startButton {
+        margin-top: 1rem; /* Slightly less space on mobile */
+    }
+    .options-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+    
+    .question-text {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        max-width: calc(100% - 50px); /* Leave space for speak button */
+    }
+}
